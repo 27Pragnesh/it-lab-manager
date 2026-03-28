@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master Timetable — IT Lab Manager</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#1B4FD8;--accent-light:#EEF2FF;
+  --green:#1A6B3C;--green-bg:#EDFAF2;
+  --red:#B91C1C;--red-bg:#FEF2F2;
+  --amber:#92400E;--amber-bg:#FFFBEB;
+  --teal:#0F6E56;--teal-bg:#ECFDF5;
+  --border:#E4E2DA;--text:#1A1A18;--text2:#6B6960;--text3:#9A9890;
+  --surface:#fff;--bg:#F4F3EF;--radius:10px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+.topnav{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100}
+.nav-brand{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
+.nav-icon{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.nav-icon svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.nav-back{font-size:13px;color:var(--accent);text-decoration:none;margin-right:8px}
+.content{padding:24px;max-width:1200px;margin:0 auto}
+.page-title{font-size:20px;font-weight:600;letter-spacing:-.3px;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--text2);margin-bottom:24px}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* Upload */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:36px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:var(--accent-light)}
+.upload-icon{font-size:36px;margin-bottom:8px}
+.upload-title{font-size:15px;font-weight:500;margin-bottom:4px}
+.upload-sub{font-size:12px;color:var(--text2)}
+
+/* Buttons */
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{opacity:.88}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-outline{background:none;color:var(--text2);border-color:var(--border)}
+.btn-outline:hover{background:var(--bg)}
+.btn-green{background:var(--green-bg);color:var(--green);border-color:#BBF7D0}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px}
+
+/* Pills */
+.pill{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;display:inline-block}
+.pill-green{background:var(--green-bg);color:var(--green)}
+.pill-blue{background:var(--accent-light);color:var(--accent)}
+.pill-amber{background:var(--amber-bg);color:var(--amber)}
+.pill-teal{background:var(--teal-bg);color:var(--teal)}
+.pill-red{background:var(--red-bg);color:var(--red)}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+.stat-val{font-size:22px;font-weight:600;letter-spacing:-.5px;margin-bottom:2px}
+.stat-lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+
+/* Filters */
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filter-bar select{padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text)}
+.search-wrap{position:relative;flex:1;min-width:180px}
+.search-wrap input{width:100%;padding:7px 12px 7px 32px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:var(--surface)}
+.search-wrap input:focus{outline:none;border-color:var(--accent)}
+.search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
+
+/* Table */
+.table-wrap{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+table{width:100%;border-collapse:collapse}
+thead{background:#F9F8F5}
+th{padding:10px 14px;text-align:left;font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;font-size:13px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#F9F8F5}
+.mono{font-family:ui-monospace,'SF Mono',monospace;font-size:12px;color:var(--text2)}
+
+/* Day tabs */
+.day-tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
+.day-tab{padding:6px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-family:inherit;transition:all .15s}
+.day-tab:hover{background:var(--bg)}
+.day-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Room grid */
+.room-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.room-card{border:1px solid var(--border);border-radius:8px;padding:12px;background:var(--surface)}
+.room-name{font-size:13px;font-weight:600;margin-bottom:4px;font-family:ui-monospace,'SF Mono',monospace}
+.room-count{font-size:11px;color:var(--text2)}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;padding:11px 16px;border-radius:9px;font-size:13px;font-weight:500;z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{background:#065F46}
+.toast.error{background:#7F1D1D}
+
+/* Info box */
+.info-box{background:var(--accent-light);border:1px solid #C7D7FA;border-radius:8px;padding:14px;font-size:13px;color:var(--accent);line-height:1.7;margin-bottom:16px}
+.info-box strong{display:block;margin-bottom:4px;font-size:14px}
+
+/* Progress */
+.prog-wrap{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:6px}
+.prog-fill{height:100%;border-radius:2px;background:var(--accent);transition:width .4s}
+
+/* Spinner */
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:768px){.stats-row{grid-template-columns:repeat(3,1fr)}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="nav-icon">
+    <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+  </div>
+  <div class="nav-brand">IT Lab Manager — Master Timetable</div>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <span id="conn-chip" style="font-size:11px;padding:4px 10px;border-radius:20px;background:var(--green-bg);color:var(--green);border:1px solid #BBF7D0">● Connected</span>
+  </div>
+</nav>
+
+<div class="content">
+  <div class="page-title">Master Timetable</div>
+  <div class="page-sub">Upload, parse and manage the department master timetable</div>
+
+  <!-- Upload section -->
+  <div class="grid2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">Upload Timetable Excel</div>
+      <div class="info-box">
+        <strong>📋 Supported Format</strong>
+        Your current Excel format is supported — single sheet with Day, SR NO, Time columns
+        followed by SEM-wise divisions. Subject cells contain Subject, (Faculty) and Room.
+      </div>
+      <div class="upload-zone" id="upload-zone"
+        onclick="document.getElementById('tt-file').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleDrop(event)">
+        <div class="upload-icon">📊</div>
+        <div class="upload-title">Click to upload or drag & drop</div>
+        <div class="upload-sub">.xlsx or .xls file · Master Timetable</div>
+        <input type="file" id="tt-file" style="display:none" accept=".xlsx,.xls" onchange="handleFile(this)">
+      </div>
+      <div id="upload-status" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Save to Firebase</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:16px">
+        After parsing the Excel file, save the entire timetable to Firebase Firestore.
+        This makes it available to the student check-in form to auto-suggest subjects
+        based on the current day and time slot.
+      </div>
+      <div id="save-stats" style="margin-bottom:16px"></div>
+      <button class="btn btn-primary" id="save-btn" onclick="saveToFirebase()" disabled>
+        🔥 Save Timetable to Firebase
+      </button>
+      <div style="margin-top:10px;font-size:12px;color:var(--text2)">
+        This will overwrite any previously saved timetable in Firebase.
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="stats-row" style="display:none">
+    <div class="stat-card">
+      <div class="stat-val" id="stat-entries" style="color:var(--accent)">0</div>
+      <div class="stat-lbl">Total Entries</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="stat-days">0</div>
+      <div class="stat-lbl">Days</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="stat-sems">0</div>
+      <div class="stat-lbl">Semesters</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="stat-subjects" style="color:var(--green)">0</div>
+      <div class="stat-lbl">Subjects</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="stat-rooms" style="color:var(--teal)">0</div>
+      <div class="stat-lbl">Rooms/Labs</div>
+    </div>
+  </div>
+
+  <!-- Timetable viewer -->
+  <div id="viewer-section" style="display:none">
+    <div class="card">
+      <div class="card-title">
+        Parsed Timetable
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="exportCSV()">↓ Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Day tabs -->
+      <div class="day-tabs" id="day-tabs"></div>
+
+      <!-- Filters -->
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">⌕</span>
+          <input type="text" placeholder="Search subject, faculty, room..." oninput="applyFilters()">
+        </div>
+        <select id="f-sem" onchange="applyFilters()">
+          <option value="">All Semesters</option>
+          <option>SEM-2</option><option>SEM-4</option><option>SEM-6</option>
+        </select>
+        <select id="f-div" onchange="applyFilters()">
+          <option value="">All Divisions</option>
+          <option>A</option><option>B</option><option>C</option>
+        </select>
+        <select id="f-room" onchange="applyFilters()">
+          <option value="">All Rooms</option>
+        </select>
+        <div style="font-size:12px;color:var(--text2);margin-left:auto" id="result-count"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>Time Slot</th>
+              <th>Semester</th>
+              <th>Division</th>
+              <th>Subject</th>
+              <th>Faculty</th>
+              <th>Room / Lab</th>
+            </tr>
+          </thead>
+          <tbody id="tt-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Room summary -->
+    <div class="card">
+      <div class="card-title">Rooms & Labs Used</div>
+      <div class="room-grid" id="room-grid"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- SheetJS for Excel parsing -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+<script>
+// ── Firebase ─────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDjaKVmL3TOSnkMugvh9wQ0NbRtoBH58Ew",
+  authDomain: "mylabutilization.firebaseapp.com",
+  projectId: "mylabutilization",
+  storageBucket: "mylabutilization.firebasestorage.app",
+  messagingSenderId: "674414606871",
+  appId: "1:674414606871:web:46d094948777a5a35c7a52"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ── State ─────────────────────────────────────────────────────────
+let parsedData   = [];
+let activeDay    = 'All';
+let searchVal    = '';
+
+// ── Column mapping ────────────────────────────────────────────────
+// Row 5 header: Day, SR NO, Time, SEM-6(A,B,C), SEM-4(A,B,C), SEM-2(A,B,C)
+const COL_MAP = {
+  3:{sem:'SEM-6',div:'A'}, 4:{sem:'SEM-6',div:'B'}, 5:{sem:'SEM-6',div:'C'},
+  6:{sem:'SEM-4',div:'A'}, 7:{sem:'SEM-4',div:'B'}, 8:{sem:'SEM-4',div:'C'},
+  9:{sem:'SEM-2',div:'A'},10:{sem:'SEM-2',div:'B'},11:{sem:'SEM-2',div:'C'},
+};
+const DAYS_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+// ── Parse cell ────────────────────────────────────────────────────
+function parseCell(val){
+  if(!val) return null;
+  val = String(val).replace(/\n/g,' ').trim();
+  if(!val || val.length < 2) return null;
+  // Skip summary rows
+  if(['THEORY','PRACTICAL','TOTAL','s'].includes(val)) return null;
+
+  const roomMatch = val.match(/\b([AB]-\d+[A-Z]?)\b/);
+  const room      = roomMatch ? roomMatch[1] : '';
+  const facMatch  = val.match(/\(([^)]{2,6})\)/);
+  const faculty   = facMatch ? facMatch[1].trim() : '';
+  let subject     = val;
+  if(facMatch)    subject = val.slice(0, facMatch.index).trim();
+  else if(roomMatch) subject = val.slice(0, roomMatch.index).trim();
+  subject = subject.replace(/\s+/g,' ').replace(/[\\\/]+$/,'').trim();
+  // Clean up duplicated text (e.g. "FIT-T FIT-T")
+  const words = subject.split(' ');
+  const half  = Math.floor(words.length/2);
+  if(words.length >= 4 && words.slice(0,half).join(' ')===words.slice(half,half*2).join(' ')){
+    subject = words.slice(0,half).join(' ');
+  }
+  if(!subject || subject.length < 2) return null;
+  return {subject, faculty, room};
+}
+
+// ── Parse Excel workbook ──────────────────────────────────────────
+function parseWorkbook(wb){
+  const ws       = wb.Sheets[wb.SheetNames[0]];
+  const raw      = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
+  const results  = [];
+  let currentDay = null;
+
+  raw.forEach((row, ri) => {
+    if(!row || row.length === 0) return;
+    const col0 = row[0] ? String(row[0]).trim() : '';
+    if(DAYS_ORDER.includes(col0)) currentDay = col0;
+    if(!currentDay) return;
+
+    const timeVal = row[2] ? String(row[2]).trim() : '';
+    if(!timeVal.includes('-')) return;
+
+    for(let c=3; c<=11; c++){
+      const mapping = COL_MAP[c];
+      if(!mapping) continue;
+      const parsed = parseCell(row[c]);
+      if(parsed){
+        results.push({
+          day     : currentDay,
+          time    : timeVal,
+          semester: mapping.sem,
+          division: mapping.div,
+          subject : parsed.subject,
+          faculty : parsed.faculty,
+          room    : parsed.room,
+        });
+      }
+    }
+  });
+  return results;
+}
+
+// ── Handle file ───────────────────────────────────────────────────
+function handleFile(input){
+  const file = input.files[0];
+  if(!file) return;
+  processFile(file);
+}
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if(file) processFile(file);
+}
+
+function processFile(file){
+  const status = document.getElementById('upload-status');
+  status.innerHTML = '<div style="font-size:13px;color:var(--text2)">⏳ Reading file...</div>';
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const wb   = XLSX.read(e.target.result, {type:'binary'});
+      parsedData = parseWorkbook(wb);
+
+      if(parsedData.length === 0){
+        status.innerHTML = '<div style="background:var(--red-bg);border:1px solid #FECACA;border-radius:8px;padding:12px;font-size:13px;color:var(--red)">⚠️ Could not parse any entries. Please check the file format.</div>';
+        return;
+      }
+
+      status.innerHTML = `<div style="background:var(--green-bg);border:1px solid #BBF7D0;border-radius:8px;padding:12px;font-size:13px;color:var(--green)">
+        ✓ <strong>${file.name}</strong> parsed successfully — ${parsedData.length} schedule entries found.
+      </div>`;
+
+      document.getElementById('save-btn').disabled = false;
+      renderStats();
+      renderViewer();
+      showToast('Timetable parsed — '+parsedData.length+' entries','success');
+    } catch(err){
+      status.innerHTML = '<div style="background:var(--red-bg);border:1px solid #FECACA;border-radius:8px;padding:12px;font-size:13px;color:var(--red)">Error: '+err.message+'</div>';
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+// ── Render stats ──────────────────────────────────────────────────
+function renderStats(){
+  const days     = [...new Set(parsedData.map(e=>e.day))];
+  const sems     = [...new Set(parsedData.map(e=>e.semester))];
+  const subjects = [...new Set(parsedData.map(e=>e.subject).filter(Boolean))];
+  const rooms    = [...new Set(parsedData.map(e=>e.room).filter(Boolean))];
+
+  document.getElementById('stat-entries').textContent  = parsedData.length;
+  document.getElementById('stat-days').textContent     = days.length;
+  document.getElementById('stat-sems').textContent     = sems.length;
+  document.getElementById('stat-subjects').textContent = subjects.length;
+  document.getElementById('stat-rooms').textContent    = rooms.length;
+  document.getElementById('stats-row').style.display   = 'grid';
+
+  // Save stats box
+  document.getElementById('save-stats').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+      <div style="background:var(--bg);border-radius:6px;padding:10px">
+        <div style="font-weight:600;font-size:16px;color:var(--accent)">${parsedData.length}</div>
+        <div style="color:var(--text2)">Entries to save</div>
+      </div>
+      <div style="background:var(--bg);border-radius:6px;padding:10px">
+        <div style="font-weight:600;font-size:16px;color:var(--green)">${rooms.length}</div>
+        <div style="color:var(--text2)">Rooms / Labs</div>
+      </div>
+    </div>`;
+
+  // Room filter
+  const roomSel = document.getElementById('f-room');
+  roomSel.innerHTML = '<option value="">All Rooms</option>';
+  rooms.sort().forEach(r=>{
+    const o=document.createElement('option');o.value=r;o.textContent=r;
+    roomSel.appendChild(o);
+  });
+
+  // Room grid
+  const roomGrid = document.getElementById('room-grid');
+  const roomCounts = {};
+  parsedData.forEach(e=>{ if(e.room) roomCounts[e.room]=(roomCounts[e.room]||0)+1; });
+  roomGrid.innerHTML = rooms.sort().map(r=>`
+    <div class="room-card">
+      <div class="room-name">${r}</div>
+      <div class="room-count">${roomCounts[r]} slots/week</div>
+      <div class="prog-wrap"><div class="prog-fill" style="width:${Math.min(100,roomCounts[r]*5)}%"></div></div>
+    </div>`).join('');
+}
+
+// ── Render viewer ─────────────────────────────────────────────────
+function renderViewer(){
+  document.getElementById('viewer-section').style.display = 'block';
+
+  // Day tabs
+  const days = ['All', ...DAYS_ORDER.filter(d=>parsedData.some(e=>e.day===d))];
+  const tabs  = document.getElementById('day-tabs');
+  tabs.innerHTML = days.map(d=>
+    `<button class="day-tab${d==='All'?' active':''}" onclick="setDay('${d}',this)">${d}</button>`
+  ).join('');
+
+  applyFilters();
+}
+
+function setDay(day, btn){
+  activeDay = day;
+  document.querySelectorAll('.day-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+// ── Filter & render table ─────────────────────────────────────────
+function applyFilters(){
+  const sem    = document.getElementById('f-sem').value;
+  const div    = document.getElementById('f-div').value;
+  const room   = document.getElementById('f-room').value;
+  const search = document.querySelector('.search-wrap input').value.toLowerCase();
+
+  const filtered = parsedData.filter(e=>{
+    if(activeDay !== 'All' && e.day !== activeDay) return false;
+    if(sem  && e.semester !== sem) return false;
+    if(div  && e.division !== div) return false;
+    if(room && e.room !== room)    return false;
+    if(search && !`${e.subject} ${e.faculty} ${e.room}`.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  document.getElementById('result-count').textContent = filtered.length + ' entries';
+
+  const semColors = {'SEM-2':'pill-green','SEM-4':'pill-blue','SEM-6':'pill-teal'};
+  const divColors = {'A':'pill-amber','B':'pill-blue','C':'pill-teal'};
+
+  document.getElementById('tt-tbody').innerHTML = filtered.map(e=>`
+    <tr>
+      <td><strong>${e.day}</strong></td>
+      <td class="mono">${e.time}</td>
+      <td><span class="pill ${semColors[e.semester]||'pill-blue'}">${e.semester}</span></td>
+      <td><span class="pill ${divColors[e.division]||'pill-blue'}">${e.division}</span></td>
+      <td><strong>${e.subject}</strong></td>
+      <td class="mono">${e.faculty||'—'}</td>
+      <td><span class="pill pill-teal">${e.room||'—'}</span></td>
+    </tr>`).join('');
+}
+
+// ── Save to Firebase ──────────────────────────────────────────────
+async function saveToFirebase(){
+  if(parsedData.length===0){ showToast('No data to save','error'); return; }
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Saving...';
+
+  try{
+    // Delete existing timetable
+    const existing = await db.collection('timetable').get();
+    const deleteBatch = db.batch();
+    existing.docs.forEach(d => deleteBatch.delete(d.ref));
+    if(!existing.empty) await deleteBatch.commit();
+
+    // Save in batches of 400 (Firestore limit is 500)
+    const BATCH_SIZE = 400;
+    for(let i=0; i<parsedData.length; i+=BATCH_SIZE){
+      const batch = db.batch();
+      parsedData.slice(i, i+BATCH_SIZE).forEach((entry,j)=>{
+        const ref = db.collection('timetable').doc(`entry_${i+j}`);
+        batch.set(ref, {
+          ...entry,
+          savedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+      await batch.commit();
+    }
+
+    // Save metadata
+    await db.collection('timetable_meta').doc('latest').set({
+      totalEntries : parsedData.length,
+      semesters    : [...new Set(parsedData.map(e=>e.semester))],
+      rooms        : [...new Set(parsedData.map(e=>e.room).filter(Boolean))],
+      subjects     : [...new Set(parsedData.map(e=>e.subject).filter(Boolean))],
+      uploadedAt   : firebase.firestore.FieldValue.serverTimestamp(),
+    });
+
+    btn.innerHTML  = '✓ Saved to Firebase';
+    btn.className  = 'btn btn-green';
+    showToast('Timetable saved — '+parsedData.length+' entries ✓','success');
+  } catch(err){
+    btn.disabled  = false;
+    btn.innerHTML = '🔥 Save Timetable to Firebase';
+    showToast('Error: '+err.message,'error');
+  }
+}
+
+// ── Export CSV ────────────────────────────────────────────────────
+function exportCSV(){
+  if(parsedData.length===0){ showToast('No data to export','error'); return; }
+  const header = 'Day,Time,Semester,Division,Subject,Faculty,Room';
+  const rows   = parsedData.map(e=>
+    `${e.day},${e.time},${e.semester},${e.division},"${e.subject}",${e.faculty},${e.room}`
+  );
+  const csv  = [header,...rows].join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download='master_timetable_parsed.csv'; a.click();
+  showToast('CSV exported','success');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast'+(type?' '+type:'');
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── Auto-load from Firebase if available ─────────────────────────
+window.onload = function(){
+  db.collection('timetable_meta').doc('latest').get()
+    .then(doc=>{
+      if(doc.exists){
+        const meta = doc.data();
+        document.getElementById('upload-status').innerHTML = `
+          <div style="background:var(--green-bg);border:1px solid #BBF7D0;border-radius:8px;padding:12px;font-size:13px;color:var(--green)">
+            ✓ Timetable already saved in Firebase — <strong>${meta.totalEntries} entries</strong>
+            · ${(meta.semesters||[]).join(', ')} · ${(meta.rooms||[]).length} rooms<br>
+            <span style="font-size:11px;opacity:.75">Upload a new file to replace it.</span>
+          </div>`;
+        // Load the actual data for display
+        db.collection('timetable').get().then(snap=>{
+          if(!snap.empty){
+            parsedData = snap.docs.map(d=>d.data());
+            document.getElementById('save-btn').disabled = false;
+            renderStats();
+            renderViewer();
+          }
+        });
+      }
+    })
+    .catch(()=>{}); // offline or no data yet
+};
+</script>
+</body>
+</html>
