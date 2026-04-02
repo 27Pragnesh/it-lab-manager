@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Lab Utilization Form</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#1B4FD8;--accent-light:#EEF2FF;
+  --green:#1A6B3C;--green-bg:#EDFAF2;
+  --red:#B91C1C;--red-bg:#FEF2F2;
+  --amber:#92400E;--amber-bg:#FFFBEB;
+  --border:#E4E2DA;--text:#1A1A18;--text2:#6B6960;--text3:#9A9890;
+  --surface:#fff;--bg:#F4F3EF;--radius:12px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px 16px 48px;display:flex;flex-direction:column;align-items:center}
+
+/* Loading */
+#loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Occupied */
+#occupied-screen{display:none;width:100%;max-width:460px;background:var(--red-bg);border:1px solid #FECACA;border-radius:var(--radius);padding:28px;text-align:center;margin-top:20px}
+.occ-icon{font-size:44px;margin-bottom:12px}
+.occ-title{font-size:18px;font-weight:600;color:var(--red);margin-bottom:8px}
+.occ-msg{font-size:13px;color:var(--text2);line-height:1.7}
+
+/* Success */
+#success-screen{display:none;width:100%;max-width:460px;text-align:center;margin-top:20px}
+.suc-icon{width:70px;height:70px;background:var(--green-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:30px;border:2px solid #86EFAC}
+.suc-title{font-size:21px;font-weight:600;color:var(--green);margin-bottom:16px}
+.suc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;text-align:left;margin-bottom:14px}
+.srow{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)}
+.srow:last-child{border-bottom:none}
+.slbl{font-size:12px;color:var(--text2)}
+.sval{font-size:13px;font-weight:500;text-align:right;max-width:60%}
+.checkout-banner{background:var(--amber-bg);border:1px solid #FDE68A;border-radius:10px;padding:14px;font-size:13px;color:var(--amber);line-height:1.7;margin-bottom:14px}
+.timer{font-size:28px;font-weight:600;color:var(--accent);margin:10px 0 3px;font-variant-numeric:tabular-nums}
+.timer-lbl{font-size:12px;color:var(--text2)}
+
+/* Header */
+.header{width:100%;max-width:460px;text-align:center;margin-bottom:18px}
+.logo{width:48px;height:48px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.logo svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.h-title{font-size:20px;font-weight:600;letter-spacing:-.3px;margin-bottom:2px}
+.h-sub{font-size:13px;color:var(--text2);margin-bottom:12px}
+.pc-badge{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:40px;padding:7px 16px;font-size:13px;font-weight:500}
+.pc-dot{width:9px;height:9px;border-radius:50%;background:#22C55E;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* Autofill banner */
+.autofill-banner{width:100%;max-width:460px;background:var(--accent-light);border:1px solid #C7D7FA;border-radius:10px;padding:12px 14px;font-size:13px;color:var(--accent);margin-bottom:12px;display:none;line-height:1.6}
+
+/* Error banner */
+.err-banner{width:100%;max-width:460px;background:var(--red-bg);border:1px solid #FECACA;border-radius:9px;padding:11px 14px;font-size:13px;color:var(--red);margin-bottom:12px;display:none}
+
+/* Card */
+.card{width:100%;max-width:460px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px}
+.card-title{font-size:15px;font-weight:600;margin-bottom:2px}
+.card-sub{font-size:12px;color:var(--text2);margin-bottom:16px}
+
+/* Form */
+.fgroup{margin-bottom:13px}
+.fgroup:last-child{margin-bottom:0}
+.flabel{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px}
+.finput,.fselect{
+  width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
+  font-size:14px;font-family:inherit;background:#fff;color:var(--text);
+  -webkit-appearance:none;transition:border .15s;
+}
+.fselect{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6960' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;
+}
+.finput:focus,.fselect:focus{outline:none;border-color:var(--accent)}
+.finput.auto,.fselect.auto{background:#F0FDF4;border-color:#86EFAC;color:var(--green)}
+.finput.ok{border-color:#86EFAC}
+.finput.err,.fselect.err{border-color:#FCA5A5}
+.field-hint{font-size:11px;color:var(--text3);margin-top:4px}
+.field-err{font-size:12px;color:var(--red);margin-top:4px;display:none}
+.vname{font-size:13px;font-weight:500;color:var(--green);margin-top:5px;display:none}
+
+/* Optgroup style */
+optgroup{font-weight:600;font-size:12px}
+
+/* Student slots */
+.slot{border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:10px;background:var(--bg);transition:border-color .2s,background .2s}
+.slot.ok{border-color:#86EFAC;background:#F0FDF4}
+.slot.bad{border-color:#FCA5A5;background:var(--red-bg)}
+.slot-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.slot-lbl{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+.slot-rm{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text3);padding:2px 6px;border-radius:4px;line-height:1;transition:all .15s}
+.slot-rm:hover{background:var(--red-bg);color:var(--red)}
+.enroll-wrap{position:relative}
+.estatus{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:17px;line-height:1}
+
+/* Add slot button */
+.add-slot-btn{width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:9px;background:none;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:2px}
+.add-slot-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+
+/* Grid */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* Submit */
+.submit-btn{width:100%;max-width:460px;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;transition:opacity .15s;margin-bottom:8px}
+.submit-btn:hover{opacity:.88}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+.submit-note{font-size:12px;color:var(--text3);text-align:center;width:100%;max-width:460px}
+
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div style="font-size:14px;color:var(--text2)">Checking PC status...</div>
+</div>
+
+<div id="occupied-screen">
+  <div class="occ-icon">🔒</div>
+  <div class="occ-title">PC is Currently Occupied</div>
+  <div class="occ-msg">This PC already has an active session. Please use another available PC or wait for the current session to end.</div>
+  <div id="occ-detail" style="margin-top:12px;font-size:12px;color:var(--text2)"></div>
+</div>
+
+<div id="success-screen">
+  <div class="suc-icon">✓</div>
+  <div class="suc-title">Submitted Successfully!</div>
+  <div class="suc-card" id="suc-details"></div>
+  <div class="checkout-banner">
+    ⏱ Your session will auto-end after <strong id="dur-disp">—</strong>. No action needed when you leave.
+  </div>
+  <div style="text-align:center;margin-bottom:8px">
+    <div class="timer-lbl">Session ends at</div>
+    <div class="timer" id="end-time">—</div>
+    <div class="timer-lbl" id="countdown" style="color:var(--text3)"></div>
+  </div>
+</div>
+
+<div id="main-form" class="hidden">
+
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    </div>
+    <div class="h-title">Lab Utilization Form</div>
+    <div class="h-sub">Information Technology Department</div>
+    <div class="pc-badge">
+      <span class="pc-dot"></span>
+      <span id="badge-pc">—</span>
+      <span style="color:var(--text2);font-size:12px" id="badge-lab"></span>
+    </div>
+  </div>
+
+  <div class="autofill-banner" id="autofill-banner">
+    <strong>✦ Auto-filled from timetable</strong> — Subject, faculty and time slot filled based on today's schedule. Change if needed.
+  </div>
+
+  <div class="err-banner" id="err-banner"></div>
+
+  <!-- PC & Lab — from QR -->
+  <div class="card">
+    <div class="card-title">PC & Lab Information</div>
+    <div class="card-sub">Auto-filled from QR code — read only</div>
+    <div class="grid2">
+      <div class="fgroup">
+        <label class="flabel">PC Number</label>
+        <input class="finput auto" id="f-pc" readonly>
+      </div>
+      <div class="fgroup">
+        <label class="flabel">Lab Number</label>
+        <select class="fselect auto" id="f-lab">
+          <option value="">Select lab</option>
+          <option>A-110</option>
+          <option>A-107</option>
+          <option>A-109</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Students -->
+  <div class="card">
+    <div class="card-title">Student Details</div>
+    <div class="card-sub">1 to 3 students per PC — enrollment number validated from student list</div>
+    <div id="slots"></div>
+    <button class="add-slot-btn" id="add-btn" onclick="addSlot()">+ Add another student (max 3)</button>
+  </div>
+
+  <!-- Session details -->
+  <div class="card">
+    <div class="card-title">Session Details</div>
+    <div class="card-sub">Fields marked with ✦ are auto-filled from today's timetable</div>
+
+    <div class="grid2">
+      <div class="fgroup">
+        <label class="flabel">Semester</label>
+        <select class="fselect" id="f-sem">
+          <option value="">Select</option>
+          <option>SEM-1</option><option>SEM-2</option><option>SEM-3</option>
+          <option>SEM-4</option><option>SEM-5</option><option>SEM-6</option>
+          <option>SEM-7</option><option>SEM-8</option>
+        </select>
+      </div>
+      <div class="fgroup">
+        <label class="flabel">Division</label>
+        <select class="fselect" id="f-div">
+          <option value="">Select</option>
+          <option>A</option><option>B</option><option>C</option><option>D</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fgroup">
+      <label class="flabel">Batch</label>
+      <select class="fselect" id="f-batch">
+        <option value="">Select batch</option>
+        <option>2021-25</option><option>2022-26</option><option>2023-27</option><option>2024-28</option>
+      </select>
+    </div>
+
+    <div class="fgroup">
+      <label class="flabel">✦ Subject</label>
+      <select class="fselect" id="f-subject">
+        <option value="">Select subject</option>
+        <option>AAD</option>
+        <option>ACP</option>
+        <option>ADV MATHS</option>
+        <option>ADV MATHS-T</option>
+        <option>AJP</option>
+        <option>BE</option>
+        <option>CPD</option>
+        <option>DM</option>
+        <option>FIT</option>
+        <option>FSD</option>
+        <option>ICT</option>
+        <option>IT</option>
+        <option>OOP</option>
+        <option>PHY</option>
+        <option>PROJECT-II</option>
+        <option>WD</option>
+        <option>WNS</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <div class="fgroup">
+      <label class="flabel">✦ Faculty</label>
+      <select class="fselect" id="f-faculty">
+        <option value="">Select faculty</option>
+        <option>DYV</option>
+        <option>JJD</option>
+        <option>KHT</option>
+        <option>KKD</option>
+        <option>KRC</option>
+        <option>MKL</option>
+        <option>MVD</option>
+        <option>NRP</option>
+        <option>PAP</option>
+        <option>RRR</option>
+        <option>SNS</option>
+        <option>V1</option>
+        <option>VMV</option>
+        <option>VSB</option>
+        <option>VST</option>
+        <option>ZVP</option>
+      </select>
+    </div>
+
+    <div class="fgroup">
+      <label class="flabel">✦ Time Slot</label>
+      <select class="fselect" id="f-time">
+        <option value="">Select time slot</option>
+        <optgroup label="Theory — 1 hour">
+          <option>8:30-9:30</option>
+          <option>9:30-10:30</option>
+          <option>10:40-11:40</option>
+          <option>11:40-12:40</option>
+          <option>1:00-2:00</option>
+          <option>2:00-3:00</option>
+          <option>3:10-4:10</option>
+          <option>4:10-5:10</option>
+          <option>5:10-6:10</option>
+        </optgroup>
+        <optgroup label="Practical — 2 hours">
+          <option>10:40-12:40</option>
+          <option>11:40-2:00</option>
+          <option>1:00-3:00</option>
+          <option>3:10-5:10</option>
+        </optgroup>
+      </select>
+      <div class="field-hint" id="time-hint"></div>
+    </div>
+
+    <div class="fgroup">
+      <label class="flabel">Purpose of Utilization</label>
+      <select class="fselect" id="f-purpose">
+        <option value="">Select purpose</option>
+        <option value="Lab Practical">Lab Practical</option>
+        <option value="Assignment">Assignment</option>
+        <option value="Project Work">Project Work</option>
+        <option value="Exam Preparation">Exam Preparation</option>
+        <option value="Practice">Practice</option>
+        <option value="Research">Research</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="submit-btn" id="submit-btn" onclick="submitForm()">
+    Submit Lab Utilization Entry
+  </button>
+  <div class="submit-note">Your entry is saved to the department database for utilization reports.</div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDjaKVmL3TOSnkMugvh9wQ0NbRtoBH58Ew",
+  authDomain: "mylabutilization.firebaseapp.com",
+  projectId: "mylabutilization",
+  storageBucket: "mylabutilization.firebasestorage.app",
+  messagingSenderId: "674414606871",
+  appId: "1:674414606871:web:46d094948777a5a35c7a52"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const params = new URLSearchParams(window.location.search);
+const LAB    = params.get('lab') || 'A-110';
+const PC     = params.get('pc')  || 'PC-01';
+const PC_ID  = LAB + '-' + PC;
+
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+const TIME_ORDER = [
+  '8:30-9:30','9:30-10:30','10:40-11:40','11:40-12:40',
+  '1:00-2:00','2:00-3:00','3:10-4:10','4:10-5:10','5:10-6:10'
+];
+const PRACTICAL_SLOTS = {
+  '10:40-12:40': 120,
+  '11:40-2:00' : 120,
+  '1:00-3:00'  : 120,
+  '3:10-5:10'  : 120,
+};
+
+let slotCount = 0, verified = {}, debounce = {}, autoFilled = {};
+
+function currentTimeSlot(){
+  const now = new Date(), t = now.getHours()*60 + now.getMinutes();
+  const map = [
+    ['8:30-9:30',510,570],['9:30-10:30',570,630],['10:40-11:40',640,700],
+    ['11:40-12:40',700,760],['1:00-2:00',780,840],['2:00-3:00',840,900],
+    ['3:10-4:10',910,970],['4:10-5:10',970,1030],['5:10-6:10',1030,1090],
+    // Also check 2hr practical ranges
+    ['10:40-12:40',640,760],['11:40-2:00',700,840],
+    ['1:00-3:00',780,900],['3:10-5:10',910,1030],
+  ];
+  for(const [l,s,e] of map) if(t>=s-15 && t<=e) return l;
+  return null;
+}
+
+function slotDurationMins(slot){
+  if(PRACTICAL_SLOTS[slot]) return 120;
+  return 60;
+}
+
+window.onload = async function(){
+  document.getElementById('f-pc').value  = PC;
+  document.getElementById('badge-pc').textContent  = PC;
+  document.getElementById('badge-lab').textContent = '· ' + LAB;
+
+  // Pre-select lab from QR param
+  const labEl = document.getElementById('f-lab');
+  labEl.value = LAB;
+  if(!labEl.value) labEl.selectedIndex = 0;
+
+  addSlot();
+
+  try{
+    const snap = await db.collection('lab_utilization')
+      .where('pcId','==',PC_ID).where('status','==','active').get();
+    document.getElementById('loading-screen').style.display = 'none';
+    if(!snap.empty){ showOccupied(snap.docs[0].data()); return; }
+    document.getElementById('main-form').classList.remove('hidden');
+    autoFillFromTimetable();
+  } catch(e){
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('main-form').classList.remove('hidden');
+  }
+};
+
+async function autoFillFromTimetable(){
+  try{
+    const today = DAYS[new Date().getDay()];
+    const slot  = currentTimeSlot();
+    if(!slot) return;
+
+    const snap = await db.collection('timetable')
+      .where('day','==',today).where('time','==',slot).get();
+    if(snap.empty) return;
+
+    const entry = snap.docs[0].data();
+    let filled  = false;
+
+    if(entry.subject){
+      const el = document.getElementById('f-subject');
+      el.value = entry.subject;
+      if(el.value){ el.classList.add('auto'); autoFilled.subject = entry.subject; filled = true; }
+    }
+    if(entry.faculty){
+      const el = document.getElementById('f-faculty');
+      el.value = entry.faculty;
+      if(el.value){ el.classList.add('auto'); autoFilled.faculty = entry.faculty; filled = true; }
+    }
+    if(entry.semester){
+      const el = document.getElementById('f-sem');
+      el.value = entry.semester;
+      if(el.value){ el.classList.add('auto'); autoFilled.semester = entry.semester; }
+    }
+    if(entry.division){
+      const el = document.getElementById('f-div');
+      el.value = entry.division;
+      if(el.value){ el.classList.add('auto'); autoFilled.division = entry.division; }
+    }
+    // Auto-select time slot
+    const timeEl = document.getElementById('f-time');
+    timeEl.value = slot;
+    if(timeEl.value){ timeEl.classList.add('auto'); autoFilled.timeSlot = slot; }
+    updateTimeHint(slot);
+
+    if(filled) document.getElementById('autofill-banner').style.display = 'block';
+  } catch(e){ console.log('Timetable autofill error:', e); }
+}
+
+function updateTimeHint(slot){
+  const hint = document.getElementById('time-hint');
+  if(PRACTICAL_SLOTS[slot]){
+    hint.textContent = 'Practical session — 2 hours';
+    hint.style.color = 'var(--green)';
+  } else if(slot) {
+    hint.textContent = 'Theory session — 1 hour';
+    hint.style.color = 'var(--text3)';
+  } else {
+    hint.textContent = '';
+  }
+}
+document.getElementById('f-time') && document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('f-time').addEventListener('change', function(){ updateTimeHint(this.value); });
+});
+
+function showOccupied(s){
+  document.getElementById('occupied-screen').style.display = 'block';
+  const fmt = t => t ? new Date(t.seconds*1000).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '—';
+  document.getElementById('occ-detail').innerHTML =
+    '<div style="margin-top:6px">Checked in: <strong>'+fmt(s.checkinTime)+'</strong></div>'+
+    '<div>Auto ends at: <strong>'+fmt(s.checkoutTime)+'</strong></div>';
+}
+
+// ── Student slots ─────────────────────────────────────────────────
+function addSlot(){
+  if(slotCount >= 3) return;
+  const i = slotCount++;
+  const div = document.createElement('div');
+  div.className = 'slot'; div.id = 'slot-'+i;
+  div.innerHTML = `
+    <div class="slot-head">
+      <span class="slot-lbl">Student ${i+1}</span>
+      ${i>0 ? `<button class="slot-rm" onclick="rmSlot(${i})">×</button>` : ''}
+    </div>
+    <div class="fgroup" style="margin-bottom:8px">
+      <label class="flabel">Enrollment Number</label>
+      <div class="enroll-wrap">
+        <input class="finput" id="en-${i}" maxlength="10"
+          placeholder="e.g. 21IT045"
+          oninput="validateEn(${i})"
+          autocomplete="off" autocorrect="off"
+          autocapitalize="characters" spellcheck="false">
+        <span class="estatus" id="es-${i}"></span>
+      </div>
+      <div class="vname" id="vn-${i}"></div>
+      <div class="field-err" id="ee-${i}"></div>
+    </div>
+    <div class="fgroup">
+      <label class="flabel">Full Name</label>
+      <input class="finput" id="nm-${i}"
+        placeholder="Student full name"
+        autocomplete="off">
+      <div class="field-hint">Auto-fills when enrollment number is found in database</div>
+    </div>`;
+  document.getElementById('slots').appendChild(div);
+  if(slotCount >= 3) document.getElementById('add-btn').style.display = 'none';
+  if(i === 0) document.getElementById('en-0').focus();
+}
+
+function rmSlot(i){
+  document.getElementById('slot-'+i)?.remove();
+  slotCount--; delete verified[i];
+  document.getElementById('add-btn').style.display = 'block';
+}
+
+function validateEn(i){
+  const inp = document.getElementById('en-'+i);
+  const val = inp.value.trim().toUpperCase(); inp.value = val;
+  const es  = document.getElementById('es-'+i);
+  const vn  = document.getElementById('vn-'+i);
+  const ee  = document.getElementById('ee-'+i);
+  const nm  = document.getElementById('nm-'+i);
+  const slot= document.getElementById('slot-'+i);
+
+  es.textContent = ''; vn.style.display = 'none';
+  ee.style.display = 'none'; slot.classList.remove('ok','bad');
+  delete verified[i];
+
+  if(val.length < 4) return;
+
+  for(let j=0; j<slotCount; j++){
+    if(j===i) continue;
+    if(document.getElementById('en-'+j)?.value.trim().toUpperCase() === val){
+      ee.textContent = 'This enrollment number is already added.';
+      ee.style.display = 'block'; slot.classList.add('bad'); return;
+    }
+  }
+
+  es.textContent = '⏳';
+  clearTimeout(debounce[i]);
+  debounce[i] = setTimeout(async()=>{
+    try{
+      const doc = await db.collection('students').doc(val).get();
+      if(doc.exists){
+        const d = doc.data();
+        verified[i] = {enroll:val, name:d.name};
+        nm.value = d.name; nm.classList.add('ok');
+        es.textContent = '✓'; es.style.color = 'var(--green)';
+        vn.textContent = d.name + ' — verified';
+        vn.style.display = 'block'; slot.classList.add('ok');
+        ee.style.display = 'none';
+        if(d.sem && !document.getElementById('f-sem').value)
+          document.getElementById('f-sem').value = 'SEM-'+d.sem;
+        if(d.batch && !document.getElementById('f-batch').value)
+          document.getElementById('f-batch').value = d.batch;
+        if(d.div && !document.getElementById('f-div').value)
+          document.getElementById('f-div').value = d.div;
+      } else {
+        es.textContent = '⚠'; es.style.color = 'var(--amber)';
+        ee.textContent = 'Enrollment number not found in student list. Please enter name manually.';
+        ee.style.display = 'block'; slot.classList.add('bad');
+        verified[i] = {enroll:val, name:nm.value||val, manual:true};
+      }
+    } catch(e){
+      es.textContent = '~'; es.style.color = 'var(--amber)';
+      verified[i] = {enroll:val, name:nm.value||val, offline:true};
+    }
+  }, 700);
+}
+
+// ── Time slot change listener ─────────────────────────────────────
+document.getElementById('f-time').addEventListener('change', function(){
+  updateTimeHint(this.value);
+  this.classList.remove('auto');
+});
+
+// ── Error helpers ─────────────────────────────────────────────────
+function showErr(msg){
+  const el = document.getElementById('err-banner');
+  el.textContent = msg; el.style.display = 'block';
+  el.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+// ── Submit ─────────────────────────────────────────────────────────
+async function submitForm(){
+  document.getElementById('err-banner').style.display = 'none';
+
+  // Sync manually entered names
+  for(let i=0; i<slotCount; i++){
+    const en = document.getElementById('en-'+i)?.value.trim();
+    const nm = document.getElementById('nm-'+i)?.value.trim();
+    if(en && nm && !verified[i]) verified[i] = {enroll:en, name:nm, manual:true};
+    if(verified[i] && nm) verified[i].name = nm;
+  }
+
+  const students = Object.values(verified).filter(s => s.enroll && s.name);
+  if(students.length === 0){ showErr('Please enter at least one student enrollment number.'); return; }
+
+  const lab     = document.getElementById('f-lab').value;
+  const sem     = document.getElementById('f-sem').value;
+  const div     = document.getElementById('f-div').value;
+  const batch   = document.getElementById('f-batch').value;
+  const subject = document.getElementById('f-subject').value;
+  const faculty = document.getElementById('f-faculty').value;
+  const timeSlot= document.getElementById('f-time').value;
+  const purpose = document.getElementById('f-purpose').value;
+
+  if(!lab)     { showErr('Please select a lab number.'); return; }
+  if(!sem)     { showErr('Please select a semester.'); return; }
+  if(!subject) { showErr('Please select a subject.'); return; }
+  if(!faculty) { showErr('Please select a faculty.'); return; }
+  if(!timeSlot){ showErr('Please select a time slot.'); return; }
+  if(!purpose) { showErr('Please select a purpose.'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+
+  const durationMins = slotDurationMins(timeSlot);
+  const now          = new Date();
+  const checkout     = new Date(now.getTime() + durationMins * 60000);
+
+  const record = {
+    pcId        : PC_ID,
+    pc          : PC,
+    lab, labLabel: lab,
+    enrollments : students.map(s => s.enroll),
+    names       : students.map(s => s.name),
+    students, studentCount: students.length,
+    semester    : sem,
+    division    : div || '',
+    batch       : batch || '',
+    subject, faculty,
+    timeSlot,
+    durationMins,
+    purpose,
+    date        : now.toISOString().split('T')[0],
+    dayOfWeek   : DAYS[now.getDay()],
+    checkinHour : now.getHours(),
+    checkinTime : firebase.firestore.FieldValue.serverTimestamp(),
+    checkoutTime: firebase.firestore.Timestamp.fromDate(checkout),
+    status      : 'active',
+    autoFilled  : Object.keys(autoFilled).length > 0,
+    autoFilledFields: autoFilled,
+  };
+
+  try{
+    await db.collection('lab_utilization').add(record);
+    showSuccess(students, record, now, checkout, durationMins);
+  } catch(e){
+    btn.disabled = false;
+    btn.textContent = 'Submit Lab Utilization Entry';
+    showErr('Submission failed: ' + e.message + '. Please check your internet connection.');
+  }
+}
+
+function showSuccess(students, record, checkin, checkout, durMins){
+  document.getElementById('main-form').classList.add('hidden');
+  const sc = document.getElementById('success-screen');
+  sc.style.display = 'block';
+  const fmt = t => t.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const dur = durMins === 120 ? '2 hours (Practical)' : '1 hour (Theory)';
+  document.getElementById('dur-disp').textContent = dur;
+  document.getElementById('end-time').textContent = fmt(checkout);
+
+  (function tick(){
+    const r = checkout - new Date();
+    if(r <= 0){ document.getElementById('countdown').textContent = 'Session ended'; return; }
+    const m = Math.floor(r/60000), s = Math.floor((r%60000)/1000);
+    document.getElementById('countdown').textContent = m + 'm ' + s + 's remaining';
+    setTimeout(tick, 1000);
+  })();
+
+  const sRows = students.map(s=>`
+    <div class="srow">
+      <div class="slbl">Student</div>
+      <div class="sval">${s.name}<br><span style="font-size:11px;color:var(--text2)">${s.enroll}</span></div>
+    </div>`).join('');
+
+  document.getElementById('suc-details').innerHTML = `
+    ${sRows}
+    <div class="srow"><div class="slbl">PC · Lab</div><div class="sval">${record.lab} — ${PC}</div></div>
+    <div class="srow"><div class="slbl">Semester / Division</div><div class="sval">${record.semester} / ${record.division||'—'}</div></div>
+    <div class="srow"><div class="slbl">Subject</div><div class="sval">${record.subject}</div></div>
+    <div class="srow"><div class="slbl">Faculty</div><div class="sval">${record.faculty}</div></div>
+    <div class="srow"><div class="slbl">Time Slot</div><div class="sval">${record.timeSlot}</div></div>
+    <div class="srow"><div class="slbl">Purpose</div><div class="sval">${record.purpose}</div></div>
+    <div class="srow"><div class="slbl">Check-in</div><div class="sval">${fmt(checkin)}</div></div>
+    <div class="srow"><div class="slbl">Auto check-out</div><div class="sval" style="color:var(--amber)">${fmt(checkout)}</div></div>`;
+
+  sc.scrollIntoView({behavior:'smooth'});
+}
+</script>
+</body>
+</html>
