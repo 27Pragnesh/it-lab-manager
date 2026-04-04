@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Lab Admin Panel</title>
+<script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#1B4FD8;--accent-light:#EEF2FF;
+  --green:#1A6B3C;--green-bg:#EDFAF2;
+  --red:#B91C1C;--red-bg:#FEF2F2;
+  --amber:#92400E;--amber-bg:#FFFBEB;
+  --teal:#0F6E56;--teal-bg:#ECFDF5;
+  --border:#E4E2DA;--text:#1A1A18;--text2:#6B6960;--text3:#9A9890;
+  --surface:#fff;--bg:#F4F3EF;--surface2:#F9F8F5;
+  --radius:10px;--radius-lg:14px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+
+/* Login */
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;width:380px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.login-logo-icon{width:40px;height:40px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.login-logo-icon svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.login-title{font-size:20px;font-weight:600}
+.login-sub{font-size:13px;color:var(--text2)}
+.login-group{margin-bottom:14px}
+.login-label{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.5px}
+.login-input{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--surface2);color:var(--text)}
+.login-input:focus{outline:none;border-color:var(--accent)}
+.login-btn{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;margin-top:8px}
+.login-btn:hover{opacity:.88}
+.login-err{font-size:12px;color:var(--red);margin-top:8px;display:none}
+
+/* App */
+#app{display:none;flex-direction:column;min-height:100vh}
+#app.visible{display:flex}
+.topnav{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;position:sticky;top:0;z-index:100}
+.nav-brand{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
+.nav-icon{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.nav-icon svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.nav-tabs{display:flex;gap:2px;margin-left:16px;flex:1;overflow-x:auto}
+.ntab{padding:6px 12px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);border:none;background:none;font-family:inherit;transition:all .15s;white-space:nowrap}
+.ntab:hover{background:var(--bg);color:var(--text)}
+.ntab.active{background:var(--accent-light);color:var(--accent)}
+.nav-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+.nav-chip{font-size:11px;font-weight:500;padding:4px 10px;border-radius:20px;background:var(--green-bg);color:var(--green);border:1px solid #BBF7D0}
+.nav-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.logout-btn{font-size:12px;color:var(--text2);cursor:pointer;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:none;font-family:inherit}
+.logout-btn:hover{background:var(--bg)}
+
+/* Content */
+.content{flex:1;padding:24px;max-width:1200px;width:100%;margin:0 auto}
+.page{display:none}.page.active{display:block}
+.page-title{font-size:20px;font-weight:600;letter-spacing:-.3px;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
+
+/* Metrics */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.mcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px}
+.mcard-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.mcard-val{font-size:24px;font-weight:600;letter-spacing:-.5px}
+.mcard-sub{font-size:12px;color:var(--text2);margin-top:4px}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px}
+
+/* Buttons */
+.btn{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;transition:all .15s;border:1px solid transparent;display:inline-flex;align-items:center;gap:5px}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn-primary:hover{opacity:.88}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-outline{background:none;color:var(--text2);border-color:var(--border)}.btn-outline:hover{background:var(--bg)}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:#FECACA}.btn-danger:hover{background:#FEE2E2}
+.btn-green{background:var(--green-bg);color:var(--green);border-color:#BBF7D0}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px}
+
+/* Forms */
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.form-row{display:grid;gap:12px;margin-bottom:12px}
+.form-row.cols2{grid-template-columns:1fr 1fr}
+.form-label{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.form-input,.form-select,.form-textarea{padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface2);color:var(--text);width:100%}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--accent);background:#fff}
+.form-textarea{resize:vertical;min-height:90px}
+
+/* Tables */
+.table-wrap{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--surface)}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--surface2)}
+th{padding:10px 14px;text-align:left;font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+td{padding:10px 14px;font-size:13px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--surface2)}
+.mono{font-family:ui-monospace,'SF Mono',monospace;font-size:12px;color:var(--text2)}
+
+/* Pills */
+.pill{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;display:inline-block}
+.pill-green{background:var(--green-bg);color:var(--green)}
+.pill-red{background:var(--red-bg);color:var(--red)}
+.pill-amber{background:var(--amber-bg);color:var(--amber)}
+.pill-blue{background:var(--accent-light);color:var(--accent)}
+.pill-teal{background:var(--teal-bg);color:var(--teal)}
+
+/* Upload zone */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius-lg);padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2)}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:var(--accent-light)}
+.upload-icon{font-size:30px;margin-bottom:8px}
+.upload-text{font-size:14px;font-weight:500;margin-bottom:3px}
+.upload-sub{font-size:12px;color:var(--text2)}
+.upload-input{display:none}
+
+/* PC tiles */
+.pc-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+.pc-tile{border-radius:8px;padding:10px 4px;text-align:center;cursor:pointer;border:1px solid transparent;transition:all .15s;font-size:12px;font-weight:500}
+.pc-tile:hover{transform:translateY(-1px)}
+.pc-avail{background:var(--green-bg);color:var(--green);border-color:#BBF7D0}
+.pc-occ{background:var(--red-bg);color:var(--red);border-color:#FECACA}
+.pc-maint{background:var(--amber-bg);color:var(--amber);border-color:#FDE68A}
+
+/* QR */
+.qr-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+
+/* Filter bar */
+.filter-bar{display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:180px}
+.search-wrap input{width:100%;padding:8px 12px 8px 32px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface)}
+.search-wrap input:focus{outline:none;border-color:var(--accent)}
+.search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);padding:24px;width:460px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2)}
+
+/* Info box */
+.info-box{background:var(--accent-light);border:1px solid #C7D7FA;border-radius:8px;padding:14px;font-size:13px;color:var(--accent);line-height:1.7;margin-bottom:14px}
+.info-box strong{display:block;margin-bottom:3px;font-size:14px}
+.info-box code{background:#fff;border:1px solid #C7D7FA;border-radius:4px;padding:1px 6px;font-family:ui-monospace,monospace;font-size:12px}
+
+/* Divider */
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+
+/* Progress */
+.prog-wrap{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px}
+.prog-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .4s}
+
+/* Session item */
+.session-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.session-item:last-child{border-bottom:none}
+.session-pc{width:48px;height:48px;border-radius:8px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--accent);flex-shrink:0;text-align:center;line-height:1.3}
+.session-info{flex:1;min-width:0}
+.session-timer{font-family:ui-monospace,monospace;font-size:13px;font-weight:500;color:var(--accent);flex-shrink:0}
+
+/* Legend */
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.legend-dot{width:10px;height:10px;border-radius:3px;border:1px solid transparent}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;padding:11px 16px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{background:#065F46}
+.toast.error{background:#7F1D1D}
+
+/* Timetable day tabs */
+.filter-chip{padding:5px 12px;border:1px solid var(--border);border-radius:20px;font-size:12px;cursor:pointer;background:none;color:var(--text2);transition:all .15s;font-family:inherit}
+.filter-chip:hover,.filter-chip.active{background:var(--accent-light);color:var(--accent);border-color:#B5D4F4}
+
+@media(max-width:768px){.metrics{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.pc-grid{grid-template-columns:repeat(4,1fr)}.content{padding:16px}}
+@media print{.topnav,.filter-bar,.btn,.nav-right{display:none!important}.qr-box{page-break-inside:avoid}body{background:#fff}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+      <div><div class="login-title">IT Lab Manager</div><div class="login-sub">Admin Panel</div></div>
+    </div>
+    <div class="login-group">
+      <label class="login-label">Email</label>
+      <input class="login-input" type="email" id="login-email" placeholder="admin@college.edu">
+    </div>
+    <div class="login-group">
+      <label class="login-label">Password</label>
+      <input class="login-input" type="password" id="login-pass" placeholder="••••••••">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <nav class="topnav">
+    <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+    <div class="nav-brand">IT Lab Manager</div>
+    <div class="nav-tabs">
+      <button class="ntab active" onclick="showPage('dashboard')">Dashboard</button>
+      <button class="ntab" onclick="showPage('sessions')">Live Sessions</button>
+      <button class="ntab" onclick="showPage('students')">Students</button>
+      <button class="ntab" onclick="showPage('qrcodes')">QR Codes</button>
+      <button class="ntab" onclick="showPage('timetable')">Timetable</button>
+      <button class="ntab" onclick="showPage('reports')">Reports</button>
+      <button class="ntab" onclick="showPage('settings')">Settings</button>
+    </div>
+    <div class="nav-right">
+      <span class="nav-chip" id="conn-chip">● Live</span>
+      <div class="nav-avatar">AD</div>
+      <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    </div>
+  </nav>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub" id="dash-date"></div>
+      <div class="metrics">
+        <div class="mcard"><div class="mcard-label">Active Sessions</div><div class="mcard-val" style="color:var(--accent)" id="m-active">0</div><div class="mcard-sub">Across all labs</div></div>
+        <div class="mcard"><div class="mcard-label">PCs Occupied</div><div class="mcard-val" id="m-occ">0 / 30</div><div class="mcard-sub"><div class="prog-wrap"><div class="prog-fill" id="m-prog" style="width:0%"></div></div></div></div>
+        <div class="mcard"><div class="mcard-label">Students In</div><div class="mcard-val" style="color:var(--green)" id="m-students">0</div><div class="mcard-sub">Currently in labs</div></div>
+        <div class="mcard"><div class="mcard-label">Sessions Today</div><div class="mcard-val" id="m-total">0</div><div class="mcard-sub">Total entries</div></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Lab Map — Real-time <span onclick="loadDashboard()" style="cursor:pointer;color:var(--accent);font-weight:400;font-size:12px">↻ Refresh</span></div>
+          <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--green-bg);border-color:#BBF7D0"></div>Available</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--red-bg);border-color:#FECACA"></div>Occupied</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--amber-bg);border-color:#FDE68A"></div>Maintenance</div>
+          </div>
+          <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Lab A-110</div>
+          <div class="pc-grid" id="map-a110"></div>
+          <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Lab A-107</div>
+          <div class="pc-grid" id="map-a107"></div>
+          <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Lab A-109</div>
+          <div class="pc-grid" id="map-a109"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Active Sessions</div>
+          <div id="active-sessions-list"><div style="font-size:13px;color:var(--text2)">No active sessions</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE SESSIONS -->
+    <div class="page" id="page-sessions">
+      <div class="page-title">Live Sessions</div>
+      <div class="page-sub">All active and completed sessions today</div>
+      <div class="filter-bar">
+        <div class="search-wrap"><span class="search-icon">⌕</span><input type="text" placeholder="Search student, PC, enrollment..." oninput="filterSessions(this.value)"></div>
+        <select class="form-select" style="width:auto" onchange="filterSessionLab(this.value)">
+          <option value="all">All Labs</option><option>A-110</option><option>A-107</option><option>A-109</option>
+        </select>
+        <select class="form-select" style="width:auto" onchange="filterSessionStatus(this.value)">
+          <option value="all">All Status</option><option value="active">Active</option><option value="completed">Completed</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="exportSessionsCSV()">↓ Export CSV</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>PC</th><th>Lab</th><th>Students</th><th>Subject</th><th>Faculty</th><th>Time Slot</th><th>Purpose</th><th>Check-in</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id="sessions-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- STUDENTS -->
+    <div class="page" id="page-students">
+      <div class="page-title">Student Management</div>
+      <div class="page-sub">Only enrollment number and name required</div>
+      <div class="grid2" style="margin-bottom:16px">
+
+        <div class="card">
+          <div class="card-title">Upload from Excel / CSV</div>
+          <div class="info-box">
+            <strong>📋 2-column format only</strong>
+            Column A: <code>Enrollment No</code> &nbsp;|&nbsp; Column B: <code>Name</code><br>
+            No header row needed. Example: <code>21IT045</code> | <code>Raj Patel</code>
+          </div>
+          <div class="upload-zone" id="upload-zone"
+            onclick="document.getElementById('stu-file').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="stuDrop(event)">
+            <div class="upload-icon">📂</div>
+            <div class="upload-text">Click to upload or drag & drop</div>
+            <div class="upload-sub">.xlsx, .xls or .csv</div>
+            <input type="file" id="stu-file" class="upload-input" accept=".csv,.xlsx,.xls" onchange="stuFile(this)">
+          </div>
+          <div id="stu-file-status" style="margin-top:10px"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Paste from Excel / Add One</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:10px">Copy 2 columns from Excel and paste below, or add a single student.</div>
+          <div class="form-group">
+            <label class="form-label">Paste multiple rows</label>
+            <textarea class="form-textarea" id="paste-area" rows="4"
+              placeholder="Paste from Excel (2 columns)&#10;21IT045&#9;Raj Patel&#10;21IT046&#9;Priya Shah"
+              style="font-family:ui-monospace,monospace;font-size:12px"></textarea>
+          </div>
+          <button class="btn btn-outline" style="width:100%;margin-bottom:12px" onclick="stuParsePaste()">Parse Pasted Data</button>
+          <div class="divider"></div>
+          <div class="form-row cols2">
+            <div class="form-group"><label class="form-label">Enrollment No.</label><input class="form-input" id="s-enroll" placeholder="21IT045" autocapitalize="characters"></div>
+            <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" id="s-name" placeholder="Raj Patel"></div>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="stuAddOne()">+ Add Single Student</button>
+          <div id="stu-one-status" style="margin-top:8px;font-size:12px"></div>
+        </div>
+      </div>
+
+      <!-- Preview before save -->
+      <div id="stu-preview-wrap" style="display:none;margin-bottom:16px">
+        <div class="card">
+          <div class="card-title"><span id="stu-preview-title">0 students ready</span>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary btn-sm" onclick="stuSave()">🔥 Save to Firebase</button>
+              <button class="btn btn-outline btn-sm" onclick="stuClearPreview()">✕ Clear</button>
+            </div>
+          </div>
+          <div class="table-wrap" style="max-height:220px;overflow-y:auto;border:none;box-shadow:none">
+            <table><thead><tr><th>#</th><th>Enrollment No.</th><th>Name</th></tr></thead>
+            <tbody id="stu-preview-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saved list -->
+      <div class="filter-bar">
+        <div class="search-wrap"><span class="search-icon">⌕</span><input type="text" placeholder="Search name or enrollment..." oninput="stuFilter(this.value)"></div>
+        <span style="font-size:13px;color:var(--text2)" id="stu-count"></span>
+        <button class="btn btn-outline btn-sm" onclick="stuLoad()">↻ Refresh from Firebase</button>
+        <button class="btn btn-danger btn-sm" onclick="stuDeleteAll()">Delete All</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Enrollment No.</th><th>Name</th><th>Action</th></tr></thead>
+          <tbody id="students-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- QR CODES -->
+    <div class="page" id="page-qrcodes">
+      <div class="page-title">QR Code Generator</div>
+      <div class="page-sub">Generate real scannable QR codes to print and stick on each PC</div>
+      <div class="grid2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-title">Configuration</div>
+          <div class="form-group">
+            <label class="form-label">Your GitHub Pages URL</label>
+            <input class="form-input" id="app-url" placeholder="https://yourusername.github.io/it-lab-manager">
+          </div>
+          <div class="form-row cols2">
+            <div class="form-group">
+              <label class="form-label">Select Lab</label>
+              <select class="form-select" id="qr-lab">
+                <option value="A-110">Lab A-110</option>
+                <option value="A-107">Lab A-107</option>
+                <option value="A-109">Lab A-109</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">No. of PCs</label>
+              <input class="form-input" type="number" id="qr-count" value="10" min="1" max="10">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:4px">
+            <button class="btn btn-primary" onclick="renderQR()">Generate QR Codes</button>
+            <button class="btn btn-outline" onclick="window.print()">🖨 Print</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Print Instructions</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.9">
+            1. Enter your site URL above<br>
+            2. Select a lab and click <strong>Generate QR Codes</strong><br>
+            3. Click <strong>Print</strong> — set layout to Portrait, A4<br>
+            4. Cut each QR label and laminate<br>
+            5. Stick on the PC monitor or keyboard tray<br><br>
+            <strong style="color:var(--text)">Recommended size:</strong> 8×8 cm per label
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">QR Preview — <span id="qr-lab-label">Select a lab and click Generate</span></div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px" id="qr-grid"></div>
+      </div>
+    </div>
+
+    <!-- TIMETABLE -->
+    <div class="page" id="page-timetable">
+      <div class="page-title">Master Timetable</div>
+      <div class="page-sub">Upload Excel timetable and save to Firebase</div>
+      <div class="grid2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-title">Upload Timetable Excel</div>
+          <div class="info-box">
+            <strong>📋 Supported Format</strong>
+            Single sheet · Day, SR NO, Time columns followed by SEM-wise divisions.
+            Cells like <code>OOP (JJD) A-109A</code> parsed automatically.
+          </div>
+          <div class="upload-zone" id="tt-zone"
+            onclick="document.getElementById('tt-file').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="ttDrop(event)">
+            <div class="upload-icon">📊</div>
+            <div class="upload-text">Click to upload or drag & drop</div>
+            <div class="upload-sub">.xlsx or .xls · Master Timetable</div>
+            <input type="file" id="tt-file" class="upload-input" accept=".xlsx,.xls" onchange="ttFile(this)">
+          </div>
+          <div id="tt-status" style="margin-top:10px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Save to Firebase</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:14px">Parse the Excel file then save all entries to Firestore. The student check-in form will use this to auto-suggest subjects.</div>
+          <div id="tt-save-stats" style="margin-bottom:14px"></div>
+          <button class="btn btn-primary" id="tt-save-btn" onclick="ttSave()" disabled style="width:100%">🔥 Save Timetable to Firebase</button>
+          <div id="tt-save-msg" style="margin-top:8px;font-size:12px"></div>
+        </div>
+      </div>
+      <div id="tt-viewer" style="display:none">
+        <div class="card">
+          <div class="card-title">Parsed Schedule <span style="font-weight:400;font-size:12px;color:var(--text2)" id="tt-count"></span>
+            <button class="btn btn-outline btn-sm" onclick="ttExportCSV()">↓ Export CSV</button>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="tt-day-tabs"></div>
+          <div class="filter-bar">
+            <div class="search-wrap"><span class="search-icon">⌕</span><input type="text" placeholder="Search subject, faculty, room..." oninput="ttFilterApply()"></div>
+            <select class="form-select" style="width:auto" id="tt-f-sem" onchange="ttFilterApply()"><option value="">All Sems</option><option>SEM-2</option><option>SEM-4</option><option>SEM-6</option></select>
+            <select class="form-select" style="width:auto" id="tt-f-div" onchange="ttFilterApply()"><option value="">All Divs</option><option>A</option><option>B</option><option>C</option></select>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Day</th><th>Time</th><th>Semester</th><th>Division</th><th>Subject</th><th>Faculty</th><th>Room</th></tr></thead>
+            <tbody id="tt-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="page" id="page-reports">
+      <div class="page-title">Reports & Analytics</div>
+      <div class="page-sub">Lab utilization data from Firebase</div>
+      <div class="filter-bar" style="margin-bottom:16px">
+        <input type="date" class="form-input" id="rpt-from" style="width:auto">
+        <span style="color:var(--text2)">to</span>
+        <input type="date" class="form-input" id="rpt-to" style="width:auto">
+        <select class="form-select" style="width:auto" id="rpt-lab"><option value="">All Labs</option><option>A-110</option><option>A-107</option><option>A-109</option></select>
+        <button class="btn btn-primary" onclick="loadReport()">Generate Report</button>
+        <button class="btn btn-outline" onclick="exportReportCSV()">↓ Export CSV</button>
+      </div>
+      <div class="metrics" id="rpt-metrics">
+        <div class="mcard"><div class="mcard-label">Total Sessions</div><div class="mcard-val" id="rpt-total">—</div></div>
+        <div class="mcard"><div class="mcard-label">Unique Students</div><div class="mcard-val" id="rpt-students">—</div></div>
+        <div class="mcard"><div class="mcard-label">Most Used Lab</div><div class="mcard-val" id="rpt-lab-top">—</div></div>
+        <div class="mcard"><div class="mcard-label">Top Subject</div><div class="mcard-val" id="rpt-subject">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Session Log</div>
+        <div class="table-wrap" style="border:none;box-shadow:none">
+          <table><thead><tr><th>Date</th><th>PC</th><th>Lab</th><th>Students</th><th>Subject</th><th>Faculty</th><th>Time Slot</th><th>Purpose</th><th>Duration</th></tr></thead>
+          <tbody id="rpt-tbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="page-title">Settings</div>
+      <div class="page-sub">System configuration</div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Firebase Info</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.9">
+            <div><strong>Project:</strong> mylabutilization</div>
+            <div><strong>Auth Domain:</strong> mylabutilization.firebaseapp.com</div>
+            <div><strong>Collections:</strong> students, lab_utilization, timetable, timetable_meta</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Lab Configuration</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.9">
+            <div><strong>Labs:</strong> A-110, A-107, A-109</div>
+            <div><strong>PCs per lab:</strong> 10</div>
+            <div><strong>Auto check-out:</strong> Based on selected duration</div>
+            <div><strong>Max students per PC:</strong> 3</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PC Modal -->
+<div class="modal-overlay" id="pc-modal">
+  <div class="modal">
+    <div class="modal-title"><span id="modal-title">PC Details</span><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ── Firebase ─────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDjaKVmL3TOSnkMugvh9wQ0NbRtoBH58Ew",
+  authDomain: "mylabutilization.firebaseapp.com",
+  projectId: "mylabutilization",
+  storageBucket: "mylabutilization.firebasestorage.app",
+  messagingSenderId: "674414606871",
+  appId: "1:674414606871:web:46d094948777a5a35c7a52"
+};
+firebase.initializeApp(firebaseConfig);
+const db   = firebase.firestore();
+const auth = firebase.auth();
+
+// ── Toast ─────────────────────────────────────────────────────────
+function showToast(msg, type=''){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast' + (type?' '+type:'');
+  t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+// ── Login ─────────────────────────────────────────────────────────
+function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const err   = document.getElementById('login-err');
+  err.style.display = 'none';
+  auth.signInWithEmailAndPassword(email, pass)
+    .then(()=>{
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').classList.add('visible');
+      initApp();
+    })
+    .catch(e=>{
+      const msgs = {'auth/wrong-password':'Incorrect password.','auth/user-not-found':'Email not found.','auth/invalid-credential':'Invalid email or password.'};
+      err.textContent = msgs[e.code] || e.message;
+      err.style.display = 'block';
+    });
+}
+function doLogout(){
+  auth.signOut().then(()=>{
+    document.getElementById('app').classList.remove('visible');
+    document.getElementById('login-screen').style.display = 'flex';
+  });
+}
+document.getElementById('login-pass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+// ── Page navigation ───────────────────────────────────────────────
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+  const page = document.getElementById('page-'+name);
+  if(page) page.classList.add('active');
+  document.querySelectorAll('.ntab').forEach(t=>{
+    if(t.textContent.trim().toLowerCase().replace(' ','') === name.toLowerCase().replace(' ',''))
+      t.classList.add('active');
+  });
+  if(name==='sessions') loadSessions();
+  if(name==='reports')  initReportDates();
+  if(name==='timetable') ttLoadFromFirebase();
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+function initApp(){
+  const d = new Date();
+  document.getElementById('dash-date').textContent =
+    d.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) + ' · IT Department';
+  const today = d.toISOString().split('T')[0];
+  loadDashboard();
+  stuLoad();
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────
+const LABS = ['A-110','A-107','A-109'];
+let activeSessions = [];
+
+function loadDashboard(){
+  const today = new Date().toISOString().split('T')[0];
+  db.collection('lab_utilization').where('date','==',today).get()
+    .then(snap=>{
+      const all     = snap.docs.map(d=>d.data());
+      activeSessions= all.filter(s=>s.status==='active');
+      const totalStu= activeSessions.reduce((a,s)=>a+(s.studentCount||1),0);
+
+      document.getElementById('m-active').textContent   = activeSessions.length;
+      document.getElementById('m-occ').textContent      = activeSessions.length + ' / 30';
+      document.getElementById('m-students').textContent = totalStu;
+      document.getElementById('m-total').textContent    = all.length;
+      const pct = Math.round(activeSessions.length/30*100);
+      document.getElementById('m-prog').style.width     = pct+'%';
+
+      renderMaps();
+      renderActiveSessions();
+    })
+    .catch(e=>console.log('Dashboard error:',e));
+}
+
+function renderMaps(){
+  LABS.forEach(lab=>{
+    const mapId = 'map-'+lab.replace('-','');
+    const el    = document.getElementById(mapId);
+    if(!el) return;
+    el.innerHTML = '';
+    for(let i=1;i<=10;i++){
+      const pcId    = lab+'-PC-'+String(i).padStart(2,'0');
+      const pcLabel = 'PC-'+String(i).padStart(2,'0');
+      const occ     = activeSessions.find(s=>s.pcId===pcId);
+      const div = document.createElement('div');
+      div.className = 'pc-tile ' + (occ?'pc-occ':'pc-avail');
+      div.textContent = pcLabel;
+      div.title = occ ? 'Occupied: '+( occ.names||[]).join(', ') : 'Available';
+      div.onclick = ()=>openPcModal(pcLabel, lab, occ);
+      el.appendChild(div);
+    }
+  });
+}
+
+function renderActiveSessions(){
+  const list = document.getElementById('active-sessions-list');
+  if(activeSessions.length===0){ list.innerHTML='<div style="font-size:13px;color:var(--text2)">No active sessions right now</div>'; return; }
+  list.innerHTML = activeSessions.map(s=>`
+    <div class="session-item">
+      <div class="session-pc">${s.pc}<br><span style="font-size:10px">${s.lab}</span></div>
+      <div class="session-info">
+        <div style="font-size:13px;font-weight:500;margin-bottom:2px">${(s.names||[s.enrollments[0]||'—']).join(', ')}</div>
+        <div style="font-size:12px;color:var(--text2)">${s.subject||'—'} · ${s.faculty||'—'} · ${s.purpose||'—'}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="session-timer">${s.timeSlot||'—'}</div>
+        <div style="font-size:11px;color:var(--text2)">${s.semester||''} ${s.division||''}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── PC Modal ──────────────────────────────────────────────────────
+function openPcModal(pc, lab, session){
+  document.getElementById('modal-title').textContent = pc + ' · Lab ' + lab;
+  const body = document.getElementById('modal-body');
+  if(session){
+    body.innerHTML = `
+      <div style="margin-bottom:12px"><span class="pill pill-red">● Active Session</span></div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse">
+        <tr><td style="padding:6px 0;color:var(--text2);width:110px">Students</td><td style="padding:6px 0;font-weight:500">${(session.names||[]).join(', ')}</td></tr>
+        <tr><td style="padding:6px 0;color:var(--text2)">Enrollment</td><td style="padding:6px 0" class="mono">${(session.enrollments||[]).join(', ')}</td></tr>
+        <tr><td style="padding:6px 0;color:var(--text2)">Subject</td><td style="padding:6px 0">${session.subject||'—'}</td></tr>
+        <tr><td style="padding:6px 0;color:var(--text2)">Faculty</td><td style="padding:6px 0">${session.faculty||'—'}</td></tr>
+        <tr><td style="padding:6px 0;color:var(--text2)">Purpose</td><td style="padding:6px 0">${session.purpose||'—'}</td></tr>
+        <tr><td style="padding:6px 0;color:var(--text2)">Time Slot</td><td style="padding:6px 0">${session.timeSlot||'—'}</td></tr>
+      </table>`;
+  } else {
+    body.innerHTML = '<div style="font-size:13px;color:var(--text2)">This PC is currently available.</div>';
+  }
+  document.getElementById('pc-modal').classList.add('open');
+}
+function closeModal(){ document.getElementById('pc-modal').classList.remove('open'); }
+
+// ── Sessions ──────────────────────────────────────────────────────
+let allSessions=[], sessionSearch='', sessionLab='all', sessionStatus='all';
+function loadSessions(){
+  const today = new Date().toISOString().split('T')[0];
+  db.collection('lab_utilization').where('date','==',today).orderBy('checkinTime','desc').get()
+    .then(snap=>{
+      allSessions = snap.docs.map(d=>d.data());
+      renderSessions();
+    }).catch(e=>{
+      // orderBy may fail if index not created — fallback without ordering
+      db.collection('lab_utilization').where('date','==',today).get()
+        .then(snap=>{ allSessions=snap.docs.map(d=>d.data()); renderSessions(); });
+    });
+}
+function renderSessions(){
+  const filtered = allSessions.filter(s=>{
+    const ms = !sessionSearch || (s.names||[]).join(' ').toLowerCase().includes(sessionSearch)||
+               (s.enrollments||[]).join(' ').includes(sessionSearch)||
+               (s.subject||'').toLowerCase().includes(sessionSearch);
+    const ml = sessionLab==='all'||s.lab===sessionLab;
+    const mv = sessionStatus==='all'||s.status===sessionStatus;
+    return ms&&ml&&mv;
+  });
+  document.getElementById('sessions-tbody').innerHTML = filtered.map(s=>`
+    <tr>
+      <td><strong>${s.pc||'—'}</strong></td>
+      <td>${s.lab||'—'}</td>
+      <td style="font-size:12px">${(s.names||[]).join(', ')}<br><span class="mono">${(s.enrollments||[]).join(', ')}</span></td>
+      <td>${s.subject||'—'}</td>
+      <td class="mono">${s.faculty||'—'}</td>
+      <td class="mono">${s.timeSlot||'—'}</td>
+      <td>${s.purpose||'—'}</td>
+      <td class="mono">${s.checkinTime?new Date(s.checkinTime.seconds*1000).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'—'}</td>
+      <td><span class="pill ${s.status==='active'?'pill-red':'pill-green'}">${s.status==='active'?'● Active':'✓ Done'}</span></td>
+      <td>${s.status==='active'?`<button class="btn btn-sm btn-danger" onclick="endSession('${s.pcId}')">End</button>`:'—'}</td>
+    </tr>`).join('');
+}
+function filterSessions(v){sessionSearch=v.toLowerCase();renderSessions();}
+function filterSessionLab(v){sessionLab=v;renderSessions();}
+function filterSessionStatus(v){sessionStatus=v;renderSessions();}
+function endSession(pcId){
+  const today=new Date().toISOString().split('T')[0];
+  db.collection('lab_utilization').where('pcId','==',pcId).where('status','==','active').where('date','==',today).get()
+    .then(snap=>{
+      const batch=db.batch();
+      snap.docs.forEach(d=>batch.update(d.ref,{status:'completed'}));
+      return batch.commit();
+    }).then(()=>{showToast('Session ended ✓','success');loadSessions();loadDashboard();});
+}
+function exportSessionsCSV(){
+  if(!allSessions.length){showToast('No data to export','error');return;}
+  const rows=[['PC','Lab','Enrollments','Names','Subject','Faculty','Time Slot','Purpose','Semester','Date','Status'],
+    ...allSessions.map(s=>[s.pc,s.lab,(s.enrollments||[]).join(';'),(s.names||[]).join(';'),s.subject,s.faculty,s.timeSlot,s.purpose,s.semester,s.date,s.status])];
+  const csv=rows.map(r=>r.map(v=>'"'+(v||'')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='sessions_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+  showToast('CSV exported ✓','success');
+}
+
+// ── Students ──────────────────────────────────────────────────────
+let allStudents=[], stuParsed=[], stuSearchVal='';
+function stuLoad(){
+  db.collection('students').orderBy('name').get()
+    .then(snap=>{ allStudents=snap.docs.map(d=>d.data()); stuRender(); })
+    .catch(()=>{
+      db.collection('students').get()
+        .then(snap=>{ allStudents=snap.docs.map(d=>d.data()); stuRender(); });
+    });
+}
+function stuRender(){
+  const filtered=allStudents.filter(s=>!stuSearchVal||s.name.toLowerCase().includes(stuSearchVal)||s.enroll.toLowerCase().includes(stuSearchVal));
+  document.getElementById('stu-count').textContent=filtered.length+' students';
+  document.getElementById('students-tbody').innerHTML=filtered.map((s,i)=>`
+    <tr>
+      <td style="color:var(--text2)">${i+1}</td>
+      <td class="mono">${s.enroll}</td>
+      <td><strong>${s.name}</strong></td>
+      <td><button class="btn btn-sm btn-danger" onclick="stuRemove('${s.enroll}')">Remove</button></td>
+    </tr>`).join('');
+}
+function stuFilter(v){stuSearchVal=v.toLowerCase();stuRender();}
+function stuAddOne(){
+  const enroll=document.getElementById('s-enroll').value.trim().toUpperCase();
+  const name  =document.getElementById('s-name').value.trim();
+  const status=document.getElementById('stu-one-status');
+  if(!enroll||!name){status.textContent='Both fields required.';status.style.color='var(--red)';return;}
+  db.collection('students').doc(enroll).set({enroll,name,sessions:0,createdAt:firebase.firestore.FieldValue.serverTimestamp()})
+    .then(()=>{
+      showToast(name+' added ✓','success');
+      document.getElementById('s-enroll').value='';
+      document.getElementById('s-name').value='';
+      status.textContent=enroll+' — '+name+' saved ✓';status.style.color='var(--green)';
+      stuLoad();
+    }).catch(e=>{status.textContent='Error: '+e.message;status.style.color='var(--red)';});
+}
+function stuRemove(enroll){
+  if(!confirm('Remove '+enroll+'?')) return;
+  db.collection('students').doc(enroll).delete()
+    .then(()=>{showToast('Removed ✓','success');stuLoad();})
+    .catch(e=>showToast('Error: '+e.message,'error'));
+}
+function stuDeleteAll(){
+  if(!confirm('Delete ALL students? This cannot be undone.')) return;
+  db.collection('students').get().then(snap=>{
+    const b=db.batch();snap.docs.forEach(d=>b.delete(d.ref));return b.commit();
+  }).then(()=>{showToast('All students deleted','success');allStudents=[];stuRender();});
+}
+function stuFile(input){const f=input.files[0];if(f)stuProcess(f);}
+function stuDrop(e){e.preventDefault();document.getElementById('upload-zone').classList.remove('drag');const f=e.dataTransfer.files[0];if(f)stuProcess(f);}
+function stuProcess(file){
+  const status=document.getElementById('stu-file-status');
+  status.innerHTML='<div style="font-size:13px;color:var(--text2)">Reading...</div>';
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      stuParsed=[];
+      rows.forEach(row=>{
+        const en=String(row[0]||'').trim().toUpperCase();
+        const nm=String(row[1]||'').trim();
+        if(en&&nm&&!en.toLowerCase().includes('enroll')&&!en.toLowerCase().includes('no.'))
+          stuParsed.push({enroll:en,name:nm});
+      });
+      if(!stuParsed.length){status.innerHTML='<div style="color:var(--red);font-size:13px">No data found. Check format: Col A = Enrollment, Col B = Name</div>';return;}
+      status.innerHTML=`<div style="background:var(--green-bg);border:1px solid #BBF7D0;border-radius:8px;padding:10px;font-size:13px;color:var(--green)">✓ ${stuParsed.length} students found in ${file.name}</div>`;
+      stuShowPreview();
+    }catch(err){status.innerHTML='<div style="color:var(--red);font-size:13px">Error: '+err.message+'</div>';}
+  };
+  r.readAsBinaryString(file);
+}
+function stuParsePaste(){
+  const raw=document.getElementById('paste-area').value.trim();
+  if(!raw){showToast('Paste data first','error');return;}
+  stuParsed=[];
+  raw.split('\n').forEach(row=>{
+    const parts=row.split(/\t|,/).map(p=>p.trim());
+    const en=parts[0]?parts[0].toUpperCase():'';
+    const nm=parts[1]||'';
+    if(en&&nm) stuParsed.push({enroll:en,name:nm});
+  });
+  if(!stuParsed.length){showToast('Could not parse — check format','error');return;}
+  stuShowPreview();
+  document.getElementById('paste-area').value='';
+}
+function stuShowPreview(){
+  document.getElementById('stu-preview-wrap').style.display='block';
+  document.getElementById('stu-preview-title').textContent=stuParsed.length+' students ready to save';
+  document.getElementById('stu-preview-tbody').innerHTML=stuParsed.map((s,i)=>`
+    <tr><td style="color:var(--text2)">${i+1}</td><td class="mono">${s.enroll}</td><td>${s.name}</td></tr>`).join('');
+  document.getElementById('stu-preview-wrap').scrollIntoView({behavior:'smooth'});
+}
+function stuClearPreview(){stuParsed=[];document.getElementById('stu-preview-wrap').style.display='none';}
+async function stuSave(){
+  if(!stuParsed.length){showToast('No data to save','error');return;}
+  const btn=document.querySelector('#stu-preview-wrap .btn-primary');
+  if(btn){btn.disabled=true;btn.textContent='Saving...';}
+  try{
+    for(let i=0;i<stuParsed.length;i+=400){
+      const batch=db.batch();
+      stuParsed.slice(i,i+400).forEach(s=>
+        batch.set(db.collection('students').doc(s.enroll),
+          {enroll:s.enroll,name:s.name,sessions:0,createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}));
+      await batch.commit();
+    }
+    showToast(stuParsed.length+' students saved ✓','success');
+    stuClearPreview();stuLoad();
+    document.getElementById('stu-file-status').innerHTML='';
+  }catch(e){showToast('Error: '+e.message,'error');if(btn){btn.disabled=false;btn.textContent='🔥 Save to Firebase';}}
+}
+
+// ── QR Codes ──────────────────────────────────────────────────────
+function renderQR(){
+  const lab    =document.getElementById('qr-lab').value;
+  const count  =parseInt(document.getElementById('qr-count').value)||10;
+  const baseUrl=(document.getElementById('app-url').value||'').trim().replace(/\/+$/,'');
+  if(!baseUrl){showToast('Please enter your App URL first','error');return;}
+  if(typeof QRCode==='undefined'){showToast('QR library not loaded — refresh page','error');return;}
+  document.getElementById('qr-lab-label').textContent='Lab '+lab+' — '+count+' PCs';
+  const grid=document.getElementById('qr-grid');
+  grid.innerHTML='';
+  for(let i=1;i<=count;i++){
+    const pc  ='PC-'+String(i).padStart(2,'0');
+    const url =baseUrl+'/checkin.html?lab='+encodeURIComponent(lab)+'&pc='+encodeURIComponent(pc);
+    const safeId='qr'+i;
+    const item=document.createElement('div');
+    item.className='qr-box';item.style.cssText='padding:12px;text-align:center';
+    const qrDiv=document.createElement('div');qrDiv.id=safeId;
+    item.appendChild(qrDiv);
+    const pcLbl=document.createElement('div');pcLbl.style.cssText='font-size:13px;font-weight:600;margin-top:8px';pcLbl.textContent=pc;
+    item.appendChild(pcLbl);
+    const labLbl=document.createElement('div');labLbl.style.cssText='font-size:11px;color:var(--accent);margin:2px 0';labLbl.textContent='Lab '+lab;
+    item.appendChild(labLbl);
+    const urlLbl=document.createElement('div');urlLbl.style.cssText='font-size:8px;color:var(--text3);word-break:break-all;margin-top:3px';urlLbl.textContent=url;
+    item.appendChild(urlLbl);
+    grid.appendChild(item);
+    new QRCode(qrDiv,{text:url,width:120,height:120,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.H});
+  }
+  showToast(count+' QR codes generated for Lab '+lab+' ✓','success');
+}
+
+// ── Timetable ─────────────────────────────────────────────────────
+const TT_DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const TT_COLS={3:{sem:'SEM-6',div:'A'},4:{sem:'SEM-6',div:'B'},5:{sem:'SEM-6',div:'C'},6:{sem:'SEM-4',div:'A'},7:{sem:'SEM-4',div:'B'},8:{sem:'SEM-4',div:'C'},9:{sem:'SEM-2',div:'A'},10:{sem:'SEM-2',div:'B'},11:{sem:'SEM-2',div:'C'}};
+let ttData=[],ttDay='All';
+
+function ttParseCell(val){
+  if(!val)return null;
+  val=String(val).replace(/\n/g,' ').trim();
+  if(val.length<2||['THEORY','PRACTICAL','TOTAL','s'].includes(val))return null;
+  const rm=val.match(/\b([AB]-\d+[A-Z]?)\b/);const room=rm?rm[1]:'';
+  const fm=val.match(/\(([^)]{2,6})\)/);const faculty=fm?fm[1].trim():'';
+  let subject=val;
+  if(fm)subject=val.slice(0,fm.index).trim();
+  else if(rm)subject=val.slice(0,rm.index).trim();
+  subject=subject.replace(/\s+/g,' ').trim();
+  const words=subject.split(' ');const half=Math.floor(words.length/2);
+  if(words.length>=4&&words.slice(0,half).join('')===words.slice(half,half*2).join(''))subject=words.slice(0,half).join(' ');
+  if(!subject||subject.length<2)return null;
+  return{subject,faculty,room};
+}
+
+function ttFile(input){const f=input.files[0];if(f)ttProcess(f);}
+function ttDrop(e){e.preventDefault();document.getElementById('tt-zone').classList.remove('drag');const f=e.dataTransfer.files[0];if(f)ttProcess(f);}
+function ttProcess(file){
+  const status=document.getElementById('tt-status');
+  status.innerHTML='<div style="font-size:13px;color:var(--text2)">Reading...</div>';
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+      ttData=[];let day=null;
+      raw.forEach(row=>{
+        if(!row)return;
+        const c0=row[0]?String(row[0]).trim():'';
+        if(TT_DAYS.includes(c0))day=c0;
+        if(!day)return;
+        const time=row[2]?String(row[2]).trim():'';
+        if(!time.includes('-'))return;
+        for(let c=3;c<=11;c++){const m=TT_COLS[c];if(!m)continue;const p=ttParseCell(row[c]);if(p)ttData.push({day,time,...m,...p});}
+      });
+      if(!ttData.length){status.innerHTML='<div style="color:var(--red);font-size:13px">No entries found.</div>';return;}
+      status.innerHTML=`<div style="background:var(--green-bg);border:1px solid #BBF7D0;border-radius:8px;padding:10px;font-size:13px;color:var(--green)">✓ ${ttData.length} entries parsed from ${file.name}</div>`;
+      document.getElementById('tt-save-btn').disabled=false;
+      document.getElementById('tt-save-stats').innerHTML=`<div style="font-size:13px;color:var(--text2)">${ttData.length} entries · ${[...new Set(ttData.map(e=>e.subject))].length} subjects · ${[...new Set(ttData.map(e=>e.room).filter(Boolean))].length} rooms</div>`;
+      ttRenderViewer();showToast(ttData.length+' entries parsed','success');
+    }catch(err){status.innerHTML='<div style="color:var(--red);font-size:13px">Error: '+err.message+'</div>';}
+  };
+  r.readAsBinaryString(file);
+}
+function ttRenderViewer(){
+  document.getElementById('tt-viewer').style.display='block';
+  const days=['All',...TT_DAYS.filter(d=>ttData.some(e=>e.day===d))];
+  document.getElementById('tt-day-tabs').innerHTML=days.map(d=>`<button class="filter-chip${d==='All'?' active':''}" onclick="ttSetDay('${d}',this)">${d}</button>`).join('');
+  ttFilterApply();
+}
+function ttSetDay(day,btn){ttDay=day;document.querySelectorAll('#tt-day-tabs .filter-chip').forEach(t=>t.classList.remove('active'));btn.classList.add('active');ttFilterApply();}
+function ttFilterApply(){
+  const sem=document.getElementById('tt-f-sem').value;
+  const div=document.getElementById('tt-f-div').value;
+  const srch=document.querySelector('#page-timetable .search-wrap input').value.toLowerCase();
+  const f=ttData.filter(e=>{
+    if(ttDay!=='All'&&e.day!==ttDay)return false;
+    if(sem&&e.sem!==sem)return false;
+    if(div&&e.div!==div)return false;
+    if(srch&&!`${e.subject} ${e.faculty} ${e.room}`.toLowerCase().includes(srch))return false;
+    return true;
+  });
+  document.getElementById('tt-count').textContent=f.length+' entries';
+  const sc={'SEM-2':'pill-green','SEM-4':'pill-blue','SEM-6':'pill-teal'};
+  document.getElementById('tt-tbody').innerHTML=f.map(e=>`<tr><td><strong>${e.day}</strong></td><td class="mono">${e.time}</td><td><span class="pill ${sc[e.sem]||'pill-blue'}">${e.sem}</span></td><td>${e.div}</td><td><strong>${e.subject}</strong></td><td class="mono">${e.faculty||'—'}</td><td><span class="pill pill-teal">${e.room||'—'}</span></td></tr>`).join('');
+}
+async function ttSave(){
+  if(!ttData.length){showToast('No data','error');return;}
+  const btn=document.getElementById('tt-save-btn');
+  const msg=document.getElementById('tt-save-msg');
+  btn.disabled=true;btn.textContent='Saving...';
+  try{
+    const ex=await db.collection('timetable').get();
+    if(!ex.empty){const b=db.batch();ex.docs.forEach(d=>b.delete(d.ref));await b.commit();}
+    for(let i=0;i<ttData.length;i+=400){
+      const b=db.batch();
+      ttData.slice(i,i+400).forEach((e,j)=>b.set(db.collection('timetable').doc('e_'+(i+j)),e));
+      await b.commit();
+      msg.textContent='Saved '+(Math.min(i+400,ttData.length))+' of '+ttData.length+'...';
+    }
+    await db.collection('timetable_meta').doc('latest').set({
+      totalEntries:ttData.length,
+      semesters:[...new Set(ttData.map(e=>e.sem))],
+      rooms:[...new Set(ttData.map(e=>e.room).filter(Boolean))],
+      subjects:[...new Set(ttData.map(e=>e.subject).filter(Boolean))],
+      uploadedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    btn.textContent='✓ Saved to Firebase';btn.style.background='var(--green)';
+    msg.style.color='var(--green)';msg.textContent='All '+ttData.length+' entries saved ✓';
+    showToast('Timetable saved ✓','success');
+  }catch(e){btn.disabled=false;btn.textContent='🔥 Save Timetable to Firebase';msg.textContent='Error: '+e.message;showToast('Error: '+e.message,'error');}
+}
+function ttLoadFromFirebase(){
+  if(ttData.length>0)return;
+  db.collection('timetable_meta').doc('latest').get().then(doc=>{
+    if(!doc.exists)return;
+    const meta=doc.data();
+    document.getElementById('tt-status').innerHTML=`<div style="background:var(--green-bg);border:1px solid #BBF7D0;border-radius:8px;padding:10px;font-size:13px;color:var(--green)">✓ Timetable in Firebase — ${meta.totalEntries} entries · ${(meta.semesters||[]).join(', ')}</div>`;
+    db.collection('timetable').get().then(snap=>{
+      if(snap.empty)return;
+      ttData=snap.docs.map(d=>d.data());
+      document.getElementById('tt-save-btn').disabled=false;
+      ttRenderViewer();
+    });
+  }).catch(()=>{});
+}
+function ttExportCSV(){
+  if(!ttData.length){showToast('No data','error');return;}
+  const csv=['Day,Time,Semester,Division,Subject,Faculty,Room',...ttData.map(e=>`${e.day},${e.time},${e.sem},${e.div},"${e.subject}",${e.faculty},${e.room}`)].join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='timetable.csv';a.click();
+}
+
+// ── Reports ───────────────────────────────────────────────────────
+let rptData=[];
+function initReportDates(){
+  const today=new Date().toISOString().split('T')[0];
+  if(!document.getElementById('rpt-from').value) document.getElementById('rpt-from').value=today;
+  if(!document.getElementById('rpt-to').value)   document.getElementById('rpt-to').value=today;
+}
+function loadReport(){
+  const from=document.getElementById('rpt-from').value;
+  const to  =document.getElementById('rpt-to').value;
+  const lab =document.getElementById('rpt-lab').value;
+  if(!from||!to){showToast('Select date range','error');return;}
+  let q=db.collection('lab_utilization').where('date','>=',from).where('date','<=',to);
+  q.get().then(snap=>{
+    rptData=snap.docs.map(d=>d.data());
+    if(lab) rptData=rptData.filter(s=>s.lab===lab);
+    const uStu=new Set(rptData.flatMap(s=>s.enrollments||[]));
+    const labCounts={};rptData.forEach(s=>labCounts[s.lab]=(labCounts[s.lab]||0)+1);
+    const topLab=Object.entries(labCounts).sort((a,b)=>b[1]-a[1])[0];
+    const subCounts={};rptData.forEach(s=>subCounts[s.subject]=(subCounts[s.subject]||0)+1);
+    const topSub=Object.entries(subCounts).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById('rpt-total').textContent=rptData.length;
+    document.getElementById('rpt-students').textContent=uStu.size;
+    document.getElementById('rpt-lab-top').textContent=topLab?topLab[0]:'—';
+    document.getElementById('rpt-subject').textContent=topSub?topSub[0]:'—';
+    document.getElementById('rpt-tbody').innerHTML=rptData.map(s=>`
+      <tr>
+        <td class="mono">${s.date||'—'}</td>
+        <td><strong>${s.pc||'—'}</strong></td>
+        <td>${s.lab||'—'}</td>
+        <td style="font-size:12px">${(s.names||[]).join(', ')}</td>
+        <td>${s.subject||'—'}</td>
+        <td class="mono">${s.faculty||'—'}</td>
+        <td class="mono">${s.timeSlot||'—'}</td>
+        <td>${s.purpose||'—'}</td>
+        <td class="mono">${s.durationMins||'—'}m</td>
+      </tr>`).join('');
+    showToast(rptData.length+' sessions loaded','success');
+  }).catch(e=>showToast('Error: '+e.message,'error'));
+}
+function exportReportCSV(){
+  if(!rptData.length){showToast('Generate report first','error');return;}
+  const csv=[['Date','PC','Lab','Names','Enrollments','Subject','Faculty','Time Slot','Purpose','Duration','Semester'],...rptData.map(s=>[s.date,s.pc,s.lab,(s.names||[]).join(';'),(s.enrollments||[]).join(';'),s.subject,s.faculty,s.timeSlot,s.purpose,(s.durationMins||'')+'m',s.semester])].map(r=>r.map(v=>'"'+(v||'')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='report.csv';a.click();
+  showToast('CSV exported ✓','success');
+}
+</script>
+</body>
+</html>
